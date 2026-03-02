@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hedonic Baseline Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f1a; --card: #1a1a2e; --border: #2d2d4e;
+    --purple: #a78bfa; --blue: #60a5fa; --green: #34d399; --red: #f87171;
+    --text: #e8e8f0; --muted: #6b7280;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px 16px 40px; max-width: 600px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; background: linear-gradient(135deg, var(--purple), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 0.8rem; font-weight: 700; color: var(--purple); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 8px; text-align: center; }
+  .stat-val { font-size: 1.7rem; font-weight: 800; display: block; line-height: 1; margin-bottom: 4px; }
+  .stat-lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .chart-wrap { position: relative; height: 190px; margin-bottom: 10px; }
+  .baseline-msg { text-align: center; font-size: 0.82rem; padding: 10px 14px; border-radius: 10px; line-height: 1.4; }
+  .msg-high { background: #1a2e1a; color: var(--green); border: 1px solid #2d4e2d; }
+  .msg-mid  { background: #1a1f2e; color: var(--blue);  border: 1px solid #2d354e; }
+  .msg-low  { background: #2e1a1a; color: var(--red);   border: 1px solid #4e2d2d; }
+  input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 13px 15px; color: var(--text); font-size: 1rem; margin-bottom: 12px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+  input[type="text"]:focus { border-color: var(--purple); }
+  .slider-section { margin-bottom: 16px; }
+  .slider-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-label-row span:first-child { font-size: 0.85rem; color: var(--muted); }
+  .slider-big-val { font-size: 1.4rem; font-weight: 800; color: var(--purple); }
+  input[type="range"] { width: 100%; accent-color: var(--purple); cursor: pointer; height: 6px; }
+  .slider-ticks { display: flex; justify-content: space-between; padding: 4px 2px 0; }
+  .slider-ticks span { font-size: 0.65rem; color: var(--muted); }
+  .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s, transform 0.1s; -webkit-tap-highlight-color: transparent; }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-primary { background: linear-gradient(135deg, var(--purple), var(--blue)); color: white; margin-bottom: 10px; }
+  .btn-ghost { background: transparent; color: var(--red); border: 1px solid #4d2a2a; font-size: 0.85rem; padding: 11px; }
+  .log-list { list-style: none; max-height: 260px; overflow-y: auto; }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-track { background: transparent; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 13px; border-radius: 12px; margin-bottom: 7px; background: var(--bg); border: 1px solid var(--border); }
+  .log-item-left strong { font-size: 0.95rem; display: block; margin-bottom: 2px; }
+  .log-item-left .log-time { font-size: 0.72rem; color: var(--muted); }
+  .log-item-right { display: flex; align-items: center; gap: 8px; }
+  .score-tag { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 4px 6px; border-radius: 6px; line-height: 1; transition: color 0.15s; }
+  .del-btn:hover, .del-btn:active { color: var(--red); }
+  .empty-state { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px 0; }
+  .empty-state .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+  .install-tip { background: #1a1f2e; border: 1px solid #2d354e; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; text-align: center; }
+  .install-tip strong { color: var(--blue); display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Hedonic Baseline Tracker</h1>
+<p class="subtitle">Track how your enjoyment baseline shifts over time</p>
+
+<!-- Install tip -->
+<!-- <div class="install-tip">
+  <strong>📱 Add to your home screen!</strong>
+  iPhone: tap Share → "Add to Home Screen" &nbsp;|&nbsp; Android: tap ⋮ → "Add to Home Screen"
+</div> -->
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-box">
+    <span class="stat-val" id="avgDisplay" style="color:var(--purple)">—</span>
+    <span class="stat-lbl">Avg Baseline</span>
+  </div>
+  <div class="stat-box">
+    <span class="stat-val" id="highDisplay" style="color:var(--green)">—</span>
+    <span class="stat-lbl">Highest</span>
+  </div>
+  <div class="stat-box">
+    <span class="stat-val" id="lowDisplay" style="color:var(--red)">—</span>
+    <span class="stat-lbl">Lowest</span>
+  </div>
+</div>
+
+<!-- Chart -->
+<div class="card">
+  <h2>📈 Baseline Over Time</h2>
+  <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+  <div class="baseline-msg msg-mid" id="baselineMsg">Log your first activity to get started.</div>
+</div>
+
+<!-- Log Activity -->
+<div class="card">
+  <h2>➕ Log an Activity</h2>
+  <input type="text" id="activityName" placeholder="What did you do? (e.g. Morning run, Netflix, Work meeting)">
+  <div class="slider-section">
+    <div class="slider-label-row">
+      <span>Satisfaction level</span>
+      <span class="slider-big-val" id="sliderVal">5</span>
+    </div>
+    <input type="range" id="satisfactionSlider" min="1" max="10" value="5" oninput="updateSlider()">
+    <div class="slider-ticks">
+      <span>1 😩</span><span>2</span><span>3</span><span>4</span><span>5 😐</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10 🤩</span>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="logActivity()">+ Log Activity</button>
+  <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All Data</button>
+</div>
+
+<!-- Log -->
+<div class="card">
+  <h2>📋 Activity Log</h2>
+  <ul class="log-list" id="logList">
+    <li class="empty-state"><span class="icon">🌱</span>No activities logged yet.<br>Start by logging something above!</li>
+  </ul>
+</div>
+
+<script>
+  let activities = JSON.parse(localStorage.getItem('hedonicActivities') || '[]');
+
+  const ctx = document.getElementById('myChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Activity Score',
+          data: [],
+          borderColor: '#60a5fa',
+          backgroundColor: 'rgba(96,165,250,0.07)',
+          pointBackgroundColor: '#60a5fa',
+          pointBorderColor: '#0f0f1a',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          tension: 0.35,
+          fill: true
+        },
+        {
+          label: 'Running Average',
+          data: [],
+          borderColor: '#a78bfa',
+          pointRadius: 0,
+          borderWidth: 2.5,
+          tension: 0.35,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#1a1a2e',
+          borderColor: '#2d2d4e',
+          borderWidth: 1,
+          titleColor: '#e8e8f0',
+          bodyColor: '#9ca3af'
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', maxTicksLimit: 5, font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+        y: { min: 0, max: 10, ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 2 }, grid: { color: '#1f1f3a' } }
+      }
+    }
+  });
+
+  function updateSlider() {
+    const v = document.getElementById('satisfactionSlider').value;
+    document.getElementById('sliderVal').textContent = v;
+  }
+
+  function logActivity() {
+    const name = document.getElementById('activityName').value.trim();
+    const score = parseInt(document.getElementById('satisfactionSlider').value);
+    if (!name) { document.getElementById('activityName').focus(); return; }
+    const now = new Date();
+    activities.push({
+      name, score,
+      date: now.toLocaleDateString([], {month:'short', day:'numeric'}),
+      time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    document.getElementById('activityName').value = '';
+    document.getElementById('satisfactionSlider').value = 5;
+    updateSlider();
+    render();
+  }
+
+  function deleteActivity(i) {
+    activities.splice(i, 1);
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    render();
+  }
+
+  function clearAll() {
+    if (confirm('Clear all your activity data? This cannot be undone.')) {
+      activities = [];
+      localStorage.removeItem('hedonicActivities');
+      render();
+    }
+  }
+
+  function scoreColor(score) {
+    if (score >= 8) return { bg:'#1a2e1a', text:'#34d399', border:'#2d4e2d' };
+    if (score >= 5) return { bg:'#1a1f2e', text:'#60a5fa', border:'#2d354e' };
+    return { bg:'#2e1a1a', text:'#f87171', border:'#4e2d2d' };
+  }
+
+  function render() {
+    const scores = activities.map(a => a.score);
+
+    // Stats
+    if (!scores.length) {
+      ['avgDisplay','highDisplay','lowDisplay'].forEach(id => document.getElementById(id).textContent = '—');
+      document.getElementById('baselineMsg').textContent = 'Log your first activity to get started.';
+      document.getElementById('baselineMsg').className = 'baseline-msg msg-mid';
+    } else {
+      const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+      document.getElementById('avgDisplay').textContent = avg.toFixed(1);
+      document.getElementById('highDisplay').textContent = Math.max(...scores);
+      document.getElementById('lowDisplay').textContent = Math.min(...scores);
+
+      const msg = document.getElementById('baselineMsg');
+      if (avg >= 7) {
+        msg.textContent = `⚠️ High baseline (${avg.toFixed(1)}/10) — your brain is used to high enjoyment. Low-satisfaction tasks may feel especially hard or unbearable right now.`;
+        msg.className = 'baseline-msg msg-high';
+      } else if (avg >= 4) {
+        msg.textContent = `✅ Balanced baseline (${avg.toFixed(1)}/10) — you have a healthy mix of high and low satisfaction activities.`;
+        msg.className = 'baseline-msg msg-mid';
+      } else {
+        msg.textContent = `📉 Low baseline (${avg.toFixed(1)}/10) — try adding more enjoyable activities to raise your average.`;
+        msg.className = 'baseline-msg msg-low';
+      }
+    }
+
+    // Chart data
+    chart.data.labels = activities.map((a,i) => `#${i+1}`);
+    chart.data.datasets[0].data = scores;
+    chart.data.datasets[1].data = activities.map((_,i) => {
+      const s = activities.slice(0,i+1).map(a=>a.score);
+      return parseFloat((s.reduce((a,b)=>a+b,0)/s.length).toFixed(2));
+    });
+    chart.update('none');
+
+    // Log list
+    const list = document.getElementById('logList');
+    list.innerHTML = '';
+    if (!activities.length) {
+      list.innerHTML = '<li class="empty-state"><span class="icon">🌱</span>No activities logged yet.<br>Start by logging something above!</li>';
+      return;
+    }
+    [...activities].reverse().forEach((a, ri) => {
+      const i = activities.length - 1 - ri;
+      const c = scoreColor(a.score);
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.innerHTML = `
+        <div class="log-item-left">
+          <strong>${a.name}</strong>
+          <span class="log-time">${a.date} · ${a.time}</span>
+        </div>
+        <div class="log-item-right">
+          <span class="score-tag" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${a.score}/10</span>
+          <button class="del-btn" onclick="deleteActivity(${i})" title="Delete">✕</button>
+        </div>`;
+      list.appendChild(li);
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>
