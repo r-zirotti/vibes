@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hedonic Baseline Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f1a; --card: #1a1a2e; --border: #2d2d4e;
+    --purple: #a78bfa; --blue: #60a5fa; --green: #34d399; --red: #f87171; --yellow: #fbbf24;
+    --text: #e8e8f0; --muted: #6b7280;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+
+  /* NAV TABS */
+  .tab-bar { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .tab-btn { flex: 1; padding: 16px; border: none; background: none; color: var(--muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+  /* PAGES */
+  .page { display: none; padding: 20px 16px; }
+  .page.active { display: block; }
+
+  h1 { text-align: center; font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; background: linear-gradient(135deg, var(--purple), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 0.8rem; font-weight: 700; color: var(--purple); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 8px; text-align: center; }
+  .stat-val { font-size: 1.7rem; font-weight: 800; display: block; line-height: 1; margin-bottom: 4px; }
+  .stat-lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* COMPARISON CARDS */
+  .compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .compare-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; text-align: center; }
+  .compare-card .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: block; }
+  .compare-card .big { font-size: 2rem; font-weight: 800; display: block; line-height: 1; }
+  .compare-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; display: block; }
+  .compare-card .delta { font-size: 0.8rem; font-weight: 700; margin-top: 6px; display: block; }
+  .delta-up { color: var(--green); }
+  .delta-down { color: var(--red); }
+  .delta-same { color: var(--muted); }
+
+  /* CHART */
+  .chart-wrap { position: relative; height: 190px; margin-bottom: 10px; }
+  .baseline-msg { text-align: center; font-size: 0.82rem; padding: 10px 14px; border-radius: 10px; line-height: 1.4; }
+  .msg-high { background: #1a2e1a; color: var(--green); border: 1px solid #2d4e2d; }
+  .msg-mid  { background: #1a1f2e; color: var(--blue);  border: 1px solid #2d354e; }
+  .msg-low  { background: #2e1a1a; color: var(--red);   border: 1px solid #4e2d2d; }
+
+  /* INPUTS */
+  input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 13px 15px; color: var(--text); font-size: 1rem; margin-bottom: 12px; outline: none; transition: border-color 0.2s; }
+  input[type="text"]:focus { border-color: var(--purple); }
+  .slider-section { margin-bottom: 16px; }
+  .slider-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-label-row span:first-child { font-size: 0.85rem; color: var(--muted); }
+  .slider-big-val { font-size: 1.4rem; font-weight: 800; color: var(--purple); }
+  input[type="range"] { width: 100%; accent-color: var(--purple); cursor: pointer; }
+  .slider-ticks { display: flex; justify-content: space-between; padding: 4px 2px 0; }
+  .slider-ticks span { font-size: 0.65rem; color: var(--muted); }
+
+  /* BUTTONS */
+  .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s, transform 0.1s; -webkit-tap-highlight-color: transparent; }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-primary { background: linear-gradient(135deg, var(--purple), var(--blue)); color: white; margin-bottom: 10px; }
+  .btn-ghost { background: transparent; color: var(--red); border: 1px solid #4d2a2a; font-size: 0.85rem; padding: 11px; }
+
+  /* LOG LIST */
+  .log-list { list-style: none; max-height: 260px; overflow-y: auto; }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 13px; border-radius: 12px; margin-bottom: 7px; background: var(--bg); border: 1px solid var(--border); }
+  .log-item-left strong { font-size: 0.95rem; display: block; margin-bottom: 2px; }
+  .log-item-left .log-time { font-size: 0.72rem; color: var(--muted); }
+  .log-item-right { display: flex; align-items: center; gap: 8px; }
+  .score-tag { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 4px 6px; border-radius: 6px; }
+  .del-btn:hover { color: var(--red); }
+  .empty-state { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px 0; }
+  .empty-state .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+  /* CALENDAR */
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-header { font-size: 0.65rem; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 600; }
+  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; cursor: default; border: 1px solid transparent; }
+  .cal-day .day-num { font-size: 0.7rem; font-weight: 600; }
+  .cal-day .day-score { font-size: 0.6rem; margin-top: 1px; }
+  .cal-empty { aspect-ratio: 1; }
+  .cal-today { border-color: var(--purple) !important; }
+  .cal-high { background: #1a2e1a; color: var(--green); }
+  .cal-mid  { background: #1a1f2e; color: var(--blue); }
+  .cal-low  { background: #2e1a1a; color: var(--red); }
+  .cal-none { background: #15151f; color: #3a3a5a; }
+  .cal-month-label { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 12px; text-align: center; }
+
+  .week-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+  .week-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .week-stat .wval { font-size: 1.4rem; font-weight: 800; display: block; }
+  .week-stat .wlbl { font-size: 0.7rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('log')">📋 Log</button>
+  <button class="tab-btn" onclick="showTab('stats')">📊 Stats</button>
+</div>
+
+<!-- ===== LOG PAGE ===== -->
+<div class="page active" id="page-log">
+  <br>
+  <h1>Hedonic Baseline Tracker</h1>
+  <p class="subtitle">Track how your enjoyment baseline shifts over time</p>
+
+  <div class="stats-row">
+    <div class="stat-box"><span class="stat-val" id="avgDisplay" style="color:var(--purple)">—</span><span class="stat-lbl">Overall Avg</span></div>
+    <div class="stat-box"><span class="stat-val" id="highDisplay" style="color:var(--green)">—</span><span class="stat-lbl">Highest</span></div>
+    <div class="stat-box"><span class="stat-val" id="lowDisplay" style="color:var(--red)">—</span><span class="stat-lbl">Lowest</span></div>
+  </div>
+
+  <div class="card">
+    <h2>📈 Baseline Over Time</h2>
+    <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+    <div class="baseline-msg msg-mid" id="baselineMsg">Log your first activity to get started.</div>
+  </div>
+
+  <div class="card">
+    <h2>➕ Log an Activity</h2>
+    <input type="text" id="activityName" placeholder="What did you do? (e.g. Morning run, Netflix)">
+    <div class="slider-section">
+      <div class="slider-label-row">
+        <span>Satisfaction level</span>
+        <span class="slider-big-val" id="sliderVal">5</span>
+      </div>
+      <input type="range" id="satisfactionSlider" min="1" max="10" value="5" oninput="updateSlider()">
+      <div class="slider-ticks">
+        <span>1 😩</span><span>3</span><span>5 😐</span><span>7</span><span>10 🤩</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="logActivity()">+ Log Activity</button>
+    <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All Data</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 Activity Log</h2>
+    <ul class="log-list" id="logList">
+      <li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== STATS PAGE ===== -->
+<div class="page" id="page-stats">
+  <br>
+  <h1>Your Stats</h1>
+  <p class="subtitle">Daily and weekly breakdowns</p>
+
+  <!-- Daily comparison -->
+  <div class="card">
+    <h2>☀️ Daily Average</h2>
+    <div class="compare-row">
+      <div class="compare-card">
+        <span class="label">Today</span>
+        <span class="big" id="todayAvg" style="color:var(--purple)">—</span>
+        <span class="sub" id="todayCount">0 activities</span>
+      </div>
+      <div class="compare-card">
+        <span class="label">Yesterday</span>
+        <span class="big" id="yesterdayAvg" style="color:var(--blue)">—</span>
+        <span class="sub" id="yesterdayCount">0 activities</span>
+        <span class="delta" id="dailyDelta">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly comparison -->
+  <div class="card">
+    <h2>📅 Weekly Average</h2>
+    <div class="compare-row">
+      <div class="compare-card">
+        <span class="label">This Week</span>
+        <span class="big" id="thisWeekAvg" style="color:var(--purple)">—</span>
+        <span class="sub" id="thisWeekCount">0 activities</span>
+      </div>
+      <div class="compare-card">
+        <span class="label">Last Week</span>
+        <span class="big" id="lastWeekAvg" style="color:var(--blue)">—</span>
+        <span class="sub" id="lastWeekCount">0 activities</span>
+        <span class="delta" id="weeklyDelta">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card">
+    <h2>🗓 Calendar View</h2>
+    <div class="cal-month-label" id="calMonthLabel"></div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+      <span style="font-size:0.72rem;color:var(--green)">■ High (7-10)</span>
+      <span style="font-size:0.72rem;color:var(--blue)">■ Mid (4-6)</span>
+      <span style="font-size:0.72rem;color:var(--red)">■ Low (1-3)</span>
+      <span style="font-size:0.72rem;color:#3a3a5a">■ No data</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let activities = JSON.parse(localStorage.getItem('hedonicActivities') || '[]');
+
+  // ---- TAB NAVIGATION ----
+  function showTab(tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    event.target.classList.add('active');
+    if (tab === 'stats') renderStats();
+  }
+
+  // ---- CHART ----
+  const ctx = document.getElementById('myChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Activity Score', data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.07)', pointBackgroundColor: '#60a5fa', pointBorderColor: '#0f0f1a', pointBorderWidth: 2, pointRadius: 5, tension: 0.35, fill: true },
+        { label: 'Running Average', data: [], borderColor: '#a78bfa', pointRadius: 0, borderWidth: 2.5, tension: 0.35, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: { backgroundColor: '#1a1a2e', borderColor: '#2d2d4e', borderWidth: 1, titleColor: '#e8e8f0', bodyColor: '#9ca3af' }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', maxTicksLimit: 5, font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+        y: { min: 0, max: 10, ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 2 }, grid: { color: '#1f1f3a' } }
+      }
+    }
+  });
+
+  // ---- HELPERS ----
+  function toDateKey(date) {
+    return date.toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+
+  function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=Sun
+    const diff = (day === 0 ? -6 : 1 - day); // shift to Monday
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function avgOf(arr) {
+    if (!arr.length) return null;
+    return parseFloat((arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1));
+  }
+
+  function scoreColor(score) {
+    if (score >= 7) return { bg:'#1a2e1a', text:'#34d399', border:'#2d4e2d' };
+    if (score >= 4) return { bg:'#1a1f2e', text:'#60a5fa', border:'#2d354e' };
+    return { bg:'#2e1a1a', text:'#f87171', border:'#4e2d2d' };
+  }
+
+  function calClass(avg) {
+    if (avg === null) return 'cal-none';
+    if (avg >= 7) return 'cal-high';
+    if (avg >= 4) return 'cal-mid';
+    return 'cal-low';
+  }
+
+  function deltaHTML(current, previous) {
+    if (current === null || previous === null) return '<span class="delta delta-same">No comparison yet</span>';
+    const diff = (current - previous).toFixed(1);
+    if (diff > 0) return `<span class="delta delta-up">▲ +${diff} vs before</span>`;
+    if (diff < 0) return `<span class="delta delta-down">▼ ${diff} vs before</span>`;
+    return `<span class="delta delta-same">= Same as before</span>`;
+  }
+
+  // ---- SLIDER ----
+  function updateSlider() {
+    document.getElementById('sliderVal').textContent = document.getElementById('satisfactionSlider').value;
+  }
+
+  // ---- LOG ACTIVITY ----
+  function logActivity() {
+    const name = document.getElementById('activityName').value.trim();
+    const score = parseInt(document.getElementById('satisfactionSlider').value);
+    if (!name) { document.getElementById('activityName').focus(); return; }
+    const now = new Date();
+    activities.push({
+      name, score,
+      dateKey: toDateKey(now),
+      date: now.toLocaleDateString([], {month:'short', day:'numeric'}),
+      time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    document.getElementById('activityName').value = '';
+    document.getElementById('satisfactionSlider').value = 5;
+    updateSlider();
+    render();
+  }
+
+  function deleteActivity(i) {
+    activities.splice(i, 1);
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    render();
+  }
+
+  function clearAll() {
+    if (confirm('Clear all your activity data? This cannot be undone.')) {
+      activities = [];
+      localStorage.removeItem('hedonicActivities');
+      render();
+    }
+  }
+
+  // ---- RENDER LOG PAGE ----
+  function render() {
+    const scores = activities.map(a => a.score);
+
+    if (!scores.length) {
+      ['avgDisplay','highDisplay','lowDisplay'].forEach(id => document.getElementById(id).textContent = '—');
+      document.getElementById('baselineMsg').textContent = 'Log your first activity to get started.';
+      document.getElementById('baselineMsg').className = 'baseline-msg msg-mid';
+    } else {
+      const avg = avgOf(scores);
+      document.getElementById('avgDisplay').textContent = avg;
+      document.getElementById('highDisplay').textContent = Math.max(...scores);
+      document.getElementById('lowDisplay').textContent = Math.min(...scores);
+      const msg = document.getElementById('baselineMsg');
+      if (avg >= 7) { msg.textContent = `⚠️ High baseline (${avg}/10) — low-satisfaction tasks may feel especially hard right now.`; msg.className = 'baseline-msg msg-high'; }
+      else if (avg >= 4) { msg.textContent = `✅ Balanced baseline (${avg}/10) — good mix of activities.`; msg.className = 'baseline-msg msg-mid'; }
+      else { msg.textContent = `📉 Low baseline (${avg}/10) — try adding more enjoyable activities.`; msg.className = 'baseline-msg msg-low'; }
+    }
+
+    chart.data.labels = activities.map((a,i) => `#${i+1}`);
+    chart.data.datasets[0].data = scores;
+    chart.data.datasets[1].data = activities.map((_,i) => {
+      const s = activities.slice(0,i+1).map(a=>a.score);
+      return parseFloat((s.reduce((a,b)=>a+b,0)/s.length).toFixed(2));
+    });
+    chart.update('none');
+
+    const list = document.getElementById('logList');
+    list.innerHTML = '';
+    if (!activities.length) { list.innerHTML = '<li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>'; return; }
+    [...activities].reverse().forEach((a, ri) => {
+      const i = activities.length - 1 - ri;
+      const c = scoreColor(a.score);
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.innerHTML = `
+        <div class="log-item-left">
+          <strong>${a.name}</strong>
+          <span class="log-time">${a.date} · ${a.time}</span>
+        </div>
+        <div class="log-item-right">
+          <span class="score-tag" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${a.score}/10</span>
+          <button class="del-btn" onclick="deleteActivity(${i})">✕</button>
+        </div>`;
+      list.appendChild(li);
+    });
+  }
+
+  // ---- RENDER STATS PAGE ----
+  function renderStats() {
+    const today = new Date();
+    const todayKey = toDateKey(today);
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const yesterdayKey = toDateKey(yesterday);
+
+    const thisWeekStart = getWeekStart(today);
+    const lastWeekStart = new Date(thisWeekStart); lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(thisWeekStart); lastWeekEnd.setDate(thisWeekStart.getDate() - 1);
+
+    // Group by dateKey
+    const byDay = {};
+    activities.forEach(a => {
+      if (!byDay[a.dateKey]) byDay[a.dateKey] = [];
+      byDay[a.dateKey].push(a.score);
+    });
+
+    // Daily
+    const todayScores = byDay[todayKey] || [];
+    const yestScores = byDay[yesterdayKey] || [];
+    const todayAvg = avgOf(todayScores);
+    const yestAvg = avgOf(yestScores);
+
+    document.getElementById('todayAvg').textContent = todayAvg !== null ? todayAvg : '—';
+    document.getElementById('todayCount').textContent = `${todayScores.length} activit${todayScores.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('yesterdayAvg').textContent = yestAvg !== null ? yestAvg : '—';
+    document.getElementById('yesterdayCount').textContent = `${yestScores.length} activit${yestScores.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('dailyDelta').outerHTML = deltaHTML(todayAvg, yestAvg).replace('class="delta', 'id="dailyDelta" class="delta');
+    // re-grab after outerHTML swap
+    document.getElementById('dailyDelta') || (() => {
+      const el = document.querySelector('.compare-card:nth-child(2) .delta');
+      if(el) el.id = 'dailyDelta';
+    })();
+
+    // Weekly
+    const thisWeekScores = [], lastWeekScores = [];
+    activities.forEach(a => {
+      const d = new Date(a.dateKey);
+      if (d >= thisWeekStart && d <= today) thisWeekScores.push(a.score);
+      else if (d >= lastWeekStart && d <= lastWeekEnd) lastWeekScores.push(a.score);
+    });
+    const thisWeekAvg = avgOf(thisWeekScores);
+    const lastWeekAvg = avgOf(lastWeekScores);
+
+    document.getElementById('thisWeekAvg').textContent = thisWeekAvg !== null ? thisWeekAvg : '—';
+    document.getElementById('thisWeekCount').textContent = `${thisWeekScores.length} activit${thisWeekScores.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('lastWeekAvg').textContent = lastWeekAvg !== null ? lastWeekAvg : '—';
+    document.getElementById('lastWeekCount').textContent = `${lastWeekScores.length} activit${lastWeekScores.length === 1 ? 'y' : 'ies'}`;
+
+    const wDelta = document.getElementById('weeklyDelta');
+    if (thisWeekAvg !== null && lastWeekAvg !== null) {
+      const diff = (thisWeekAvg - lastWeekAvg).toFixed(1);
+      if (diff > 0) { wDelta.textContent = `▲ +${diff} vs last week`; wDelta.className = 'delta delta-up'; }
+      else if (diff < 0) { wDelta.textContent = `▼ ${diff} vs last week`; wDelta.className = 'delta delta-down'; }
+      else { wDelta.textContent = `= Same as last week`; wDelta.className = 'delta delta-same'; }
+    } else { wDelta.textContent = '—'; wDelta.className = 'delta delta-same'; }
+
+    // Calendar
+    renderCalendar(byDay, today, todayKey);
+  }
+
+  function renderCalendar(byDay, today, todayKey) {
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calMonthLabel').textContent = `${monthNames[month]} ${year}`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    // Day headers Mon-Sun
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
+      const h = document.createElement('div');
+      h.className = 'cal-header';
+      h.textContent = d;
+      grid.appendChild(h);
+    });
+
+    // First day of month
+    const firstDay = new Date(year, month, 1);
+    let startOffset = firstDay.getDay() - 1; // Mon=0
+    if (startOffset < 0) startOffset = 6;
+
+    for (let i = 0; i < startOffset; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'cal-empty';
+      grid.appendChild(empty);
+    }
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const scores = byDay[dateKey] || [];
+      const avg = avgOf(scores);
+      const cls = calClass(avg);
+      const isToday = dateKey === todayKey;
+
+      const cell = document.createElement('div');
+      cell.className = `cal-day ${cls}${isToday ? ' cal-today' : ''}`;
+      cell.innerHTML = `<span class="day-num">${d}</span>${avg !== null ? `<span class="day-score">${avg}</span>` : ''}`;
+      cell.title = avg !== null ? `${dateKey}: avg ${avg} (${scores.length} activities)` : dateKey;
+      grid.appendChild(cell);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>
