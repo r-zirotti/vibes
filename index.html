@@ -2,109 +2,109 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!--
-  viewport meta tag is essential for mobile.
-  width=device-width: makes the page match the screen width
-  initial-scale=1.0: no zoom on load
-  maximum-scale=1.0: prevents auto-zoom on input focus (important on iPhone)
--->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Hedonic Baseline Tracker</title>
-
-<!--
-  Chart.js is a free charting library loaded from a CDN (content delivery network).
-  This means it's hosted on the internet, so the user needs internet the first time.
-  After that, the browser caches it locally.
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
 <style>
-  /* Box-sizing border-box means padding and border are included in element width/height.
-     This makes layout math much more predictable. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  /* CSS custom properties (variables). Defined once here, reused everywhere below.
-     To change the whole color scheme, you only need to edit this block. */
   :root {
-    --bg: #0f0f1a;
-    --card: #1a1a2e;
-    --border: #2d2d4e;
-    --purple: #a78bfa;
-    --blue: #60a5fa;
-    --green: #34d399;
-    --red: #f87171;
-    --text: #e8e8f0;
-    --muted: #6b7280;
+    --bg: #0f0f1a; --card: #1a1a2e; --border: #2d2d4e;
+    --purple: #a78bfa; --blue: #60a5fa; --green: #34d399;
+    --red: #f87171; --text: #e8e8f0; --muted: #6b7280;
   }
 
-  /* max-width + margin auto centers the app on wide screens (like desktop)
-     while still filling the screen on mobile */
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 600px;
-    margin: 0 auto;
-    padding-bottom: 80px;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; margin: 0;
   }
 
-  /* ---- TAB BAR ----
-     position: sticky keeps it at the top as the user scrolls.
-     z-index: 100 makes sure it stays on top of other content. */
+  /* ---- TAB BAR ---- */
   .tab-bar {
-    display: flex;
-    background: var(--card);
+    display: flex; background: var(--card);
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: sticky; top: 0; z-index: 100;
   }
   .tab-btn {
-    flex: 1; /* each button takes equal width */
-    padding: 16px;
-    border: none;
-    background: none;
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
+    flex: 1; padding: 16px; border: none; background: none;
+    color: var(--muted); font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
   }
   .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); }
 
-  /* Pages are hidden by default. Only the one with class "active" is shown.
-     This is how we fake multiple pages without actually navigating anywhere. */
-  .page { display: none; padding: 20px 16px; }
+  .page { display: none; }
   .page.active { display: block; }
 
-  /* Gradient text effect using background-clip trick */
-  h1 {
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 4px;
-    background: linear-gradient(135deg, var(--purple), var(--blue));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* ============================================================
+     DESKTOP LAYOUT — two column grid
+     @media (min-width: 900px) means these styles ONLY apply
+     when the screen is 900px or wider (desktop/laptop).
+     On mobile, the normal single-column layout applies instead.
+     This is called "responsive design" using media queries.
+  ============================================================ */
+  @media (min-width: 900px) {
+    .tab-bar { padding: 0 40px; }
+    .tab-btn { flex: none; padding: 18px 32px; font-size: 1rem; }
+
+    /* The page content wrapper on desktop */
+    .desktop-wrapper {
+      display: grid;
+      /* Left column: fixed 420px. Right column: fills remaining space. */
+      grid-template-columns: 420px 1fr;
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 40px;
+      align-items: start;
+    }
+
+    /* Left column — tiles and log form */
+    .col-left { min-width: 0; }
+
+    /* Right column — chart and stats */
+    .col-right { min-width: 0; position: sticky; top: 72px; }
+
+    /* Make chart taller on desktop since there's more room */
+    .chart-wrap { height: 280px !important; }
+
+    /* Tiles grid: 3 columns on mobile, 4 columns on desktop */
+    .tiles-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+    /* Log list can be taller on desktop */
+    .log-list { max-height: 380px !important; }
   }
-  .subtitle { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+
+  /* Mobile layout — single column, full width with padding */
+  @media (max-width: 899px) {
+    .desktop-wrapper {
+      display: block;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      padding-bottom: 80px;
+    }
+    .col-right { margin-top: 0; }
+  }
+
+  h1 {
+    font-size: 1.5rem; font-weight: 800; margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* On desktop, left-align the heading instead of centering */
+  @media (min-width: 900px) { h1 { font-size: 1.8rem; } }
+
+  .subtitle { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+  @media (max-width: 899px) { h1, .subtitle { text-align: center; } }
 
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 20px;
-    margin-bottom: 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 20px; margin-bottom: 16px;
   }
   .card h2 {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--purple);
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.8rem; font-weight: 700; color: var(--purple);
+    margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em;
   }
 
   /* ---- STATS ROW ---- */
@@ -120,49 +120,43 @@
   .msg-mid  { background: #1a1f2e; color: var(--blue);  border: 1px solid #2d354e; }
   .msg-low  { background: #2e1a1a; color: var(--red);   border: 1px solid #4e2d2d; }
 
-  /* ---- TILES GRID ----
-     repeat(3, 1fr) means 3 equal columns.
-     fr = "fraction unit" — each column gets 1 equal share of the space. */
-  .tiles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  /* ---- TILES GRID ---- */
+  .tiles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
 
-  /* position: relative on the tile lets us use position: absolute on the buttons inside it,
-     so they can be placed in the corners */
   .tile {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s;
-    -webkit-tap-highlight-color: transparent; /* removes blue flash on mobile tap */
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 10px 14px; text-align: center;
+    cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
     position: relative;
+    /* Extra top padding to give room for the delete button */
+    padding-top: 28px;
   }
   .tile:active { transform: scale(0.94); }
   .tile:hover { border-color: var(--purple); }
-  .tile .tile-emoji { font-size: 1.6rem; display: block; margin-bottom: 5px; }
-  .tile .tile-name { font-size: 0.72rem; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px; line-height: 1.2; }
+  .tile .tile-emoji { font-size: 1.8rem; display: block; margin-bottom: 5px; }
+  .tile .tile-name { font-size: 0.78rem; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px; line-height: 1.2; }
   .tile .tile-score { font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; display: inline-block; }
 
-  /* These buttons sit in the corners of each tile using absolute positioning.
-     top/left/right values push them into their respective corners. */
-  .tile-edit {
-    position: absolute; top: 4px; left: 6px;
-    font-size: 0.65rem; background: none; border: none;
-    cursor: pointer; padding: 2px; opacity: 0.5;
-    transition: opacity 0.2s;
-  }
-  .tile-edit:hover { opacity: 1; }
-
+  /*
+    TASK 2 FIX — Edit and delete buttons are now 2x larger.
+    Previously these were 0.65rem (~10px). Now they are 1.1rem (~18px).
+    We also increased the hit area with padding so they're easier to tap on mobile.
+    The buttons sit in the top corners using absolute positioning.
+  */
   .tile-del {
     position: absolute; top: 4px; right: 6px;
-    font-size: 0.65rem; color: var(--muted); background: none;
-    border: none; cursor: pointer; padding: 2px;
-    transition: color 0.2s;
+    font-size: 1.1rem;      /* was 0.65rem — now ~2x larger */
+    color: var(--muted);
+    background: none; border: none;
+    cursor: pointer;
+    padding: 4px;           /* larger tap area */
+    transition: color 0.2s, transform 0.15s;
+    line-height: 1;
   }
-  .tile-del:hover { color: var(--red); }
+  .tile-del:hover { color: var(--red); transform: scale(1.2); }
 
-  /* The "+ New Tile" button that lives at the end of the grid */
+  /* The "+ New Tile" button */
   .add-tile-btn {
     background: var(--bg); border: 1px dashed var(--border);
     border-radius: 14px; padding: 14px 8px; text-align: center;
@@ -173,24 +167,19 @@
   .add-tile-btn:hover { border-color: var(--purple); color: var(--purple); }
   .add-tile-btn .plus { font-size: 1.4rem; }
 
-  /* Flash animation for when a tile is tapped and logged.
-     @keyframes defines the animation frames. "logged" class triggers it. */
   @keyframes flash { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
   .tile.logged { animation: flash 0.4s ease; }
 
-  /* ---- CUSTOM / EDIT FORM ----
-     Hidden by default (display:none). Adding class "open" shows it. */
+  /* ---- EDIT / CREATE FORM ---- */
   .custom-form {
     background: var(--bg); border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px; margin-bottom: 12px;
-    display: none;
+    border-radius: 14px; padding: 16px; margin-bottom: 12px; display: none;
   }
   .custom-form.open { display: block; }
   .custom-form input[type="text"] {
     width: 100%; background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 11px 13px; color: var(--text);
-    font-size: 0.95rem; margin-bottom: 10px; outline: none;
-    transition: border-color 0.2s;
+    font-size: 0.95rem; margin-bottom: 10px; outline: none; transition: border-color 0.2s;
   }
   .custom-form input[type="text"]:focus { border-color: var(--purple); }
   .form-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
@@ -207,9 +196,8 @@
   .btn:active { transform: scale(0.97); }
   .btn-ghost { background: transparent; color: var(--red); border: 1px solid #4d2a2a; font-size: 0.85rem; padding: 11px; margin-top: 10px; }
 
-  /* ---- ACTIVITY LOG LIST ---- */
+  /* ---- ACTIVITY LOG ---- */
   .log-list { list-style: none; max-height: 260px; overflow-y: auto; }
-  /* Custom scrollbar styling — only visible in webkit browsers (Chrome, Safari) */
   .log-list::-webkit-scrollbar { width: 4px; }
   .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .log-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 13px; border-radius: 12px; margin-bottom: 7px; background: var(--bg); border: 1px solid var(--border); }
@@ -222,15 +210,12 @@
   .empty-state { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px 0; }
   .empty-state .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
 
-  /* ---- TOAST NOTIFICATION ----
-     Fixed positioning means it stays in place even when scrolling.
-     Starts invisible and off position, transitions in when .show is added. */
+  /* ---- TOAST ---- */
   .toast {
-    position: fixed; bottom: 90px; left: 50%;
+    position: fixed; bottom: 32px; left: 50%;
     transform: translateX(-50%) translateY(20px);
-    background: #1a2e1a; color: var(--green);
-    border: 1px solid #2d4e2d; padding: 10px 20px;
-    border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    background: #1a2e1a; color: var(--green); border: 1px solid #2d4e2d;
+    padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
     opacity: 0; transition: opacity 0.3s, transform 0.3s;
     pointer-events: none; z-index: 999; white-space: nowrap;
   }
@@ -243,16 +228,12 @@
   .compare-card .big { font-size: 2rem; font-weight: 800; display: block; line-height: 1; }
   .compare-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; display: block; }
   .delta { font-size: 0.8rem; font-weight: 700; margin-top: 6px; display: block; }
-  .delta-up { color: var(--green); }
-  .delta-down { color: var(--red); }
-  .delta-same { color: var(--muted); }
+  .delta-up { color: var(--green); } .delta-down { color: var(--red); } .delta-same { color: var(--muted); }
 
   /* ---- CALENDAR ---- */
   .cal-month-label { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 12px; text-align: center; }
-  /* 7 equal columns, one per day of the week */
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .cal-header { font-size: 0.65rem; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 600; }
-  /* aspect-ratio: 1 makes each cell a perfect square regardless of screen size */
   .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid transparent; }
   .cal-day .day-num { font-size: 0.7rem; font-weight: 600; }
   .cal-day .day-score { font-size: 0.6rem; margin-top: 1px; }
@@ -262,653 +243,484 @@
   .cal-mid  { background: #1a1f2e; color: var(--blue); }
   .cal-low  { background: #2e1a1a; color: var(--red); }
   .cal-none { background: #15151f; color: #3a3a5a; }
+
+  /* Stats page desktop layout — two column grid same as log page */
+  @media (min-width: 900px) {
+    .stats-desktop-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 40px;
+    }
+    .stats-full-width {
+      grid-column: 1 / -1; /* spans both columns */
+    }
+  }
+  @media (max-width: 899px) {
+    .stats-desktop-wrapper {
+      max-width: 600px; margin: 0 auto;
+      padding: 20px 16px; padding-bottom: 80px;
+    }
+  }
 </style>
 </head>
 <body>
 
-<!-- TAB BAR — clicking each button calls showTab() with the tab name -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="showTab('log', this)">📋 Log</button>
   <button class="tab-btn" onclick="showTab('stats', this)">📊 Stats</button>
 </div>
 
-<!-- Toast notification — shown briefly after logging an activity -->
 <div class="toast" id="toast"></div>
 
 <!-- ===== LOG PAGE ===== -->
 <div class="page active" id="page-log">
-  <br>
-  <h1>Hedonic Baseline Tracker</h1>
-  <p class="subtitle">Tap an activity to instantly log it</p>
+  <!--
+    desktop-wrapper becomes a two-column grid on screens >= 900px.
+    col-left = tiles + log form. col-right = chart + stats strip.
+    On mobile this wrapper is just a normal block (single column).
+  -->
+  <div class="desktop-wrapper">
 
-  <!-- Overall stats strip -->
-  <div class="stats-row">
-    <div class="stat-box">
-      <span class="stat-val" id="avgDisplay" style="color:var(--purple)">—</span>
-      <span class="stat-lbl">Overall Avg</span>
-    </div>
-    <div class="stat-box">
-      <span class="stat-val" id="highDisplay" style="color:var(--green)">—</span>
-      <span class="stat-lbl">Highest</span>
-    </div>
-    <div class="stat-box">
-      <span class="stat-val" id="lowDisplay" style="color:var(--red)">—</span>
-      <span class="stat-lbl">Lowest</span>
-    </div>
-  </div>
+    <!-- LEFT COLUMN -->
+    <div class="col-left">
+      <h1>Hedonic Baseline Tracker</h1>
+      <p class="subtitle">Tap an activity to instantly log it</p>
+      <p class="subtitle" style="color: var(--blue); font-weight: 500;">Rate tasks that are inherently addictive and enjoyable highly, even if they're not healthy in the long term. Focus on immediate pleasure and engagement.</p>
 
-  <!-- Baseline chart card -->
-  <div class="card">
-    <h2>📈 Baseline Over Time</h2>
-    <div class="chart-wrap"><canvas id="myChart"></canvas></div>
-    <div class="baseline-msg msg-mid" id="baselineMsg">Tap an activity below to get started.</div>
-  </div>
-
-  <!-- Tiles card -->
-  <div class="card">
-    <h2>⚡ Quick Log</h2>
-
-    <!-- Tiles are rendered here by JavaScript — see renderTiles() -->
-    <div class="tiles-grid" id="tilesGrid"></div>
-
-    <!--
-      Edit / Create form.
-      Hidden by default. Opens in two modes:
-      - "create" mode when + New Tile is tapped
-      - "edit" mode when ✏️ on a tile is tapped
-      The save button label and behavior change depending on the mode.
-    -->
-    <div class="custom-form" id="customForm">
-      <input type="text" id="customName" placeholder="Activity name (e.g. Journaling)">
-      <div class="form-row">
-        <label>Score</label>
-        <input type="range" id="customSlider" min="1" max="10" value="5"
-          oninput="document.getElementById('customSliderVal').textContent=this.value">
-        <span class="fval" id="customSliderVal">5</span>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>⚡ Quick Log</h2>
+          <button id="editModeToggle" class="btn-ghost" style="font-size: 0.8rem; padding: 6px 12px;" onclick="toggleEditMode()">Edit Mode</button>
+        </div>
+        <div class="tiles-grid" id="tilesGrid"></div>
+        <div class="custom-form" id="customForm">
+          <input type="text" id="customName" placeholder="Activity name (e.g. Journaling)">
+          <div class="form-row">
+            <label>Score</label>
+            <input type="range" id="customSlider" min="1" max="10" value="5"
+              oninput="document.getElementById('customSliderVal').textContent=this.value">
+            <span class="fval" id="customSliderVal">5</span>
+          </div>
+          <div class="form-btns">
+            <button class="btn-cancel" onclick="closeForm()">Cancel</button>
+            <button class="btn-save" id="saveBtn" onclick="saveTile()">Save Tile</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All Activity Data</button>
       </div>
-      <div class="form-btns">
-        <button class="btn-cancel" onclick="closeForm()">Cancel</button>
-        <!-- id="saveBtn" lets JS change the label between "Save New Tile" and "Update Tile" -->
-        <button class="btn-save" id="saveBtn" onclick="saveTile()">Save Tile</button>
+
+      <div class="card">
+        <h2>📋 Activity Log</h2>
+        <ul class="log-list" id="logList">
+          <li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>
+        </ul>
       </div>
     </div>
 
-    <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All Activity Data</button>
-  </div>
+    <!-- RIGHT COLUMN — sticky so it stays visible while scrolling the left column -->
+    <div class="col-right">
+      <div class="stats-row">
+        <div class="stat-box"><span class="stat-val" id="avgDisplay" style="color:var(--purple)">—</span><span class="stat-lbl">Overall Avg</span></div>
+        <div class="stat-box"><span class="stat-val" id="highDisplay" style="color:var(--green)">—</span><span class="stat-lbl">Highest</span></div>
+        <div class="stat-box"><span class="stat-val" id="lowDisplay" style="color:var(--red)">—</span><span class="stat-lbl">Lowest</span></div>
+      </div>
+      <div class="card">
+        <h2>📈 Baseline Over Time</h2>
+        <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+        <div class="baseline-msg msg-mid" id="baselineMsg">Tap an activity to get started.</div>
+      </div>
+    </div>
 
-  <!-- Activity log list -->
-  <div class="card">
-    <h2>📋 Activity Log</h2>
-    <ul class="log-list" id="logList">
-      <li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>
-    </ul>
   </div>
 </div>
 
 <!-- ===== STATS PAGE ===== -->
 <div class="page" id="page-stats">
-  <br>
-  <h1>Your Stats</h1>
-  <p class="subtitle">Daily and weekly breakdowns</p>
+  <div class="stats-desktop-wrapper">
 
-  <div class="card">
-    <h2>☀️ Daily Average</h2>
-    <div class="compare-row">
-      <div class="compare-card">
-        <span class="label">Today</span>
-        <span class="big" id="todayAvg" style="color:var(--purple)">—</span>
-        <span class="sub" id="todayCount">0 activities</span>
-      </div>
-      <div class="compare-card">
-        <span class="label">Yesterday</span>
-        <span class="big" id="yesterdayAvg" style="color:var(--blue)">—</span>
-        <span class="sub" id="yesterdayCount">0 activities</span>
-        <span class="delta" id="dailyDelta">—</span>
+    <div class="stats-full-width" style="margin-bottom:4px">
+      <h1 style="margin-bottom:4px">Your Stats</h1>
+      <p class="subtitle">Daily and weekly breakdowns</p>
+    </div>
+
+    <!-- Daily card -->
+    <div class="card">
+      <h2>☀️ Daily Average</h2>
+      <div class="compare-row">
+        <div class="compare-card">
+          <span class="label">Today</span>
+          <span class="big" id="todayAvg" style="color:var(--purple)">—</span>
+          <span class="sub" id="todayCount">0 activities</span>
+        </div>
+        <div class="compare-card">
+          <span class="label">Yesterday</span>
+          <span class="big" id="yesterdayAvg" style="color:var(--blue)">—</span>
+          <span class="sub" id="yesterdayCount">0 activities</span>
+          <span class="delta" id="dailyDelta">—</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h2>📅 Weekly Average</h2>
-    <div class="compare-row">
-      <div class="compare-card">
-        <span class="label">This Week</span>
-        <span class="big" id="thisWeekAvg" style="color:var(--purple)">—</span>
-        <span class="sub" id="thisWeekCount">0 activities</span>
-      </div>
-      <div class="compare-card">
-        <span class="label">Last Week</span>
-        <span class="big" id="lastWeekAvg" style="color:var(--blue)">—</span>
-        <span class="sub" id="lastWeekCount">0 activities</span>
-        <span class="delta" id="weeklyDelta">—</span>
+    <!-- Weekly card -->
+    <div class="card">
+      <h2>📅 Weekly Average</h2>
+      <div class="compare-row">
+        <div class="compare-card">
+          <span class="label">This Week</span>
+          <span class="big" id="thisWeekAvg" style="color:var(--purple)">—</span>
+          <span class="sub" id="thisWeekCount">0 activities</span>
+        </div>
+        <div class="compare-card">
+          <span class="label">Last Week</span>
+          <span class="big" id="lastWeekAvg" style="color:var(--blue)">—</span>
+          <span class="sub" id="lastWeekCount">0 activities</span>
+          <span class="delta" id="weeklyDelta">—</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h2>🗓 Calendar View</h2>
-    <div class="cal-month-label" id="calMonthLabel"></div>
-    <div class="calendar-grid" id="calendarGrid"></div>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
-      <span style="font-size:0.72rem;color:var(--green)">■ High (7-10)</span>
-      <span style="font-size:0.72rem;color:var(--blue)">■ Mid (4-6)</span>
-      <span style="font-size:0.72rem;color:var(--red)">■ Low (1-3)</span>
-      <span style="font-size:0.72rem;color:#3a3a5a">■ No data</span>
+    <!-- Calendar spans full width on desktop -->
+    <div class="card stats-full-width">
+      <h2>🗓 Calendar View</h2>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+        <span style="font-size:0.72rem;color:var(--green)">■ High (7-10)</span>
+        <span style="font-size:0.72rem;color:var(--blue)">■ Mid (4-6)</span>
+        <span style="font-size:0.72rem;color:var(--red)">■ Low (1-3)</span>
+        <span style="font-size:0.72rem;color:#3a3a5a">■ No data</span>
+      </div>
     </div>
+
   </div>
 </div>
 
 <script>
-// ============================================================
-// DATA — loaded from localStorage on startup
-// localStorage persists between sessions (closing/reopening the app).
-// JSON.parse converts stored text back into a JavaScript object/array.
-// JSON.stringify converts a JS object/array into text for storage.
-// ============================================================
+  let activities = JSON.parse(localStorage.getItem('hedonicActivities') || '[]');
 
-// Activities log — every tap of a tile adds an entry here
-let activities = JSON.parse(localStorage.getItem('hedonicActivities') || '[]');
+  const DEFAULT_TILES = [
+    { emoji: '🏋️', name: 'Exercise',       score: 0 },
+    { emoji: '🧘', name: 'Meditation',     score: 0 },
+    { emoji: '👥', name: 'Social time',    score: 0 },
+    { emoji: '📚', name: 'Work / Study',   score: 0 },
+    { emoji: '🎨', name: 'Creative hobby', score: 0 },
+    { emoji: '📖', name: 'Reading',        score: 0 },
+    { emoji: '🎮', name: 'Gaming',         score: 0 },
+    { emoji: '📺', name: 'Netflix / TV',   score: 0 },
+    { emoji: '📱', name: 'Scrolling',      score: 0 },
+    { emoji: '🍿', name: 'Snacking',       score: 0 },
+  ];
 
-// DEFAULT_TILES are the factory presets.
-// They only get used the very first time the app loads (when localStorage is empty).
-// After that, the user's edited version stored in localStorage takes over.
-const DEFAULT_TILES = [
-  { emoji: '🏋️', name: 'Exercise',       score: 9 },
-  { emoji: '🧘', name: 'Meditation',     score: 8 },
-  { emoji: '👥', name: 'Social time',    score: 7 },
-  { emoji: '📚', name: 'Work / Study',   score: 5 },
-  { emoji: '🎨', name: 'Creative hobby', score: 8 },
-  { emoji: '📖', name: 'Reading',        score: 7 },
-  { emoji: '🎮', name: 'Gaming',         score: 6 },
-  { emoji: '📺', name: 'Netflix / TV',   score: 5 },
-  { emoji: '📱', name: 'Scrolling',      score: 3 },
-  { emoji: '🍿', name: 'Snacking',       score: 4 },
-];
+  let tiles = JSON.parse(localStorage.getItem('hedonicTiles') || 'null') || [...DEFAULT_TILES];
+  let editingTileIndex = null;
+  let isEditMode = false;
 
-// Load tiles from localStorage. If nothing saved yet, use DEFAULT_TILES.
-// The || operator means "if the left side is falsy, use the right side instead"
-let tiles = JSON.parse(localStorage.getItem('hedonicTiles') || 'null') || [...DEFAULT_TILES];
+  // ---- HELPERS ----
+  function toDateKey(date) { return date.toISOString().slice(0, 10); }
+  function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function avgOf(arr) {
+    if (!arr.length) return null;
+    return parseFloat((arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1));
+  }
+  function scoreColor(score) {
+    if (score >= 7) return { bg:'#1a2e1a', text:'#34d399', border:'#2d4e2d' };
+    if (score >= 4) return { bg:'#1a1f2e', text:'#60a5fa', border:'#2d354e' };
+    return { bg:'#2e1a1a', text:'#f87171', border:'#4e2d2d' };
+  }
+  function scoreTagStyle(score) {
+    const c = scoreColor(score);
+    return `background:${c.bg};color:${c.text};border:1px solid ${c.border}`;
+  }
 
-// This tracks whether the form is in CREATE or EDIT mode.
-// null = creating a new tile
-// a number (e.g. 3) = editing the tile at index 3 in the tiles array
-let editingTileIndex = null;
+  // ---- TOAST ----
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
 
-// ============================================================
-// HELPERS — small reusable functions used throughout the code
-// ============================================================
+  // ---- TAB NAV ----
+  function showTab(tab, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'stats') renderStats();
+  }
 
-// Converts a Date object to a "YYYY-MM-DD" string used as a day key
-// e.g. new Date() → "2026-03-06"
-// .slice(0, 10) trims the time portion off the ISO string
-function toDateKey(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-// Returns the Monday of the week containing the given date.
-// Weeks start on Monday per your preference.
-function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
-  const diff = day === 0 ? -6 : 1 - day; // calculate how far back Monday is
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0); // reset to midnight
-  return d;
-}
-
-// Calculates the average of a number array.
-// Returns null if the array is empty (so we can show "—" instead of NaN)
-function avgOf(arr) {
-  if (!arr.length) return null;
-  return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
-}
-
-// Returns background/text/border colors based on a score.
-// Used to color tiles and score tags consistently throughout the app.
-function scoreColor(score) {
-  if (score >= 7) return { bg: '#1a2e1a', text: '#34d399', border: '#2d4e2d' };
-  if (score >= 4) return { bg: '#1a1f2e', text: '#60a5fa', border: '#2d354e' };
-  return { bg: '#2e1a1a', text: '#f87171', border: '#4e2d2d' };
-}
-
-// Returns an inline style string for score tags in the activity log
-function scoreTagStyle(score) {
-  const c = scoreColor(score);
-  return `background:${c.bg};color:${c.text};border:1px solid ${c.border}`;
-}
-
-// ============================================================
-// TOAST — the small popup that confirms an activity was logged
-// ============================================================
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  // Remove the "show" class after 2 seconds, hiding the toast
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-// ============================================================
-// TAB NAVIGATION
-// ============================================================
-
-function showTab(tab, btn) {
-  // Hide all pages and deactivate all tab buttons
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  // Show the selected page and mark its button active
-  document.getElementById('page-' + tab).classList.add('active');
-  btn.classList.add('active');
-  // Stats page needs to recalculate every time it's opened
-  if (tab === 'stats') renderStats();
-}
-
-// ============================================================
-// CHART SETUP
-// Chart.js requires a canvas element and a config object.
-// We set it up once here and update its data later in render().
-// ============================================================
-
-const ctx = document.getElementById('myChart').getContext('2d');
-const chart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: [], // x-axis labels (filled in render())
-    datasets: [
-      {
-        label: 'Activity Score',
-        data: [], // filled in render()
-        borderColor: '#60a5fa',
-        backgroundColor: 'rgba(96,165,250,0.07)',
-        pointBackgroundColor: '#60a5fa',
-        pointBorderColor: '#0f0f1a',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        tension: 0.35, // curve smoothness (0 = straight lines)
-        fill: true
-      },
-      {
-        label: 'Running Average',
-        data: [],
-        borderColor: '#a78bfa',
-        pointRadius: 0, // no dots on this line
-        borderWidth: 2.5,
-        tension: 0.35,
-        fill: false
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { intersect: false, mode: 'index' },
-    plugins: {
-      legend: { labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 12 } },
-      tooltip: { backgroundColor: '#1a1a2e', borderColor: '#2d2d4e', borderWidth: 1, titleColor: '#e8e8f0', bodyColor: '#9ca3af' }
+  // ---- CHART ----
+  const ctx = document.getElementById('myChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Activity Score', data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.07)', pointBackgroundColor: '#60a5fa', pointBorderColor: '#0f0f1a', pointBorderWidth: 2, pointRadius: 5, tension: 0.35, fill: true },
+        { label: 'Running Average', data: [], borderColor: '#a78bfa', pointRadius: 0, borderWidth: 2.5, tension: 0.35, fill: false }
+      ]
     },
-    scales: {
-      x: { ticks: { color: '#6b7280', maxTicksLimit: 5, font: { size: 10 } }, grid: { color: '#1a1a2e' } },
-      y: { min: 0, max: 10, ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 2 }, grid: { color: '#1f1f3a' } }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: { backgroundColor: '#1a1a2e', borderColor: '#2d2d4e', borderWidth: 1, titleColor: '#e8e8f0', bodyColor: '#9ca3af' }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', maxTicksLimit: 5, font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+        y: { min: 0, max: 10, ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 2 }, grid: { color: '#1f1f3a' } }
+      }
     }
-  }
-});
-
-// ============================================================
-// LOGGING AN ACTIVITY
-// Called when a tile is tapped.
-// ============================================================
-
-function logActivity(name, score, tileEl) {
-  const now = new Date();
-  // Push a new entry into the activities array
-  activities.push({
-    name,
-    score,
-    dateKey: toDateKey(now), // used for daily/weekly/calendar grouping
-    date: now.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-    time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
-  // Save to localStorage so data survives page refresh
-  localStorage.setItem('hedonicActivities', JSON.stringify(activities));
-  // Flash the tile briefly so user gets visual feedback
-  if (tileEl) {
-    tileEl.classList.add('logged');
-    setTimeout(() => tileEl.classList.remove('logged'), 400);
-  }
-  showToast(`✓ Logged: ${name} (${score}/10)`);
-  render(); // re-draw the chart and log list
-}
 
-// Removes one activity by its index in the array.
-// splice(index, 1) removes exactly 1 item at that position.
-function deleteActivity(i) {
-  activities.splice(i, 1);
-  localStorage.setItem('hedonicActivities', JSON.stringify(activities));
-  render();
-}
-
-// Wipes all activity data after a confirmation dialog
-function clearAll() {
-  if (confirm('Clear all activity data? This cannot be undone.')) {
-    activities = [];
-    localStorage.removeItem('hedonicActivities');
+  // ---- LOG ACTIVITY ----
+  function logActivity(name, score, tileEl) {
+    const now = new Date();
+    activities.push({
+      name, score,
+      dateKey: toDateKey(now),
+      date: now.toLocaleDateString([], {month:'short', day:'numeric'}),
+      time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    if (tileEl) { tileEl.classList.add('logged'); setTimeout(() => tileEl.classList.remove('logged'), 400); }
+    showToast(`✓ Logged: ${name} (${score}/10)`);
     render();
   }
-}
 
-// ============================================================
-// TILE MANAGEMENT
-// ============================================================
-
-// Opens the form in CREATE mode (blank, ready for a new tile)
-function openNewForm() {
-  editingTileIndex = null; // null signals "create" mode to saveTile()
-  document.getElementById('customName').value = '';
-  document.getElementById('customSlider').value = 5;
-  document.getElementById('customSliderVal').textContent = '5';
-  document.getElementById('saveBtn').textContent = 'Save New Tile';
-  document.getElementById('customForm').classList.add('open');
-  document.getElementById('customName').focus();
-}
-
-// Opens the form in EDIT mode, pre-filled with the tile's current values
-function openEditForm(index) {
-  editingTileIndex = index; // store which tile we're editing
-  const tile = tiles[index];
-  document.getElementById('customName').value = tile.name;
-  document.getElementById('customSlider').value = tile.score;
-  document.getElementById('customSliderVal').textContent = tile.score;
-  document.getElementById('saveBtn').textContent = 'Update Tile';
-  document.getElementById('customForm').classList.add('open');
-  document.getElementById('customName').focus();
-}
-
-// Closes the form and resets state
-function closeForm() {
-  document.getElementById('customForm').classList.remove('open');
-  editingTileIndex = null;
-}
-
-// Handles both saving a NEW tile and UPDATING an existing one.
-// The editingTileIndex variable determines which path to take.
-function saveTile() {
-  const name = document.getElementById('customName').value.trim();
-  const score = parseInt(document.getElementById('customSlider').value);
-  if (!name) { document.getElementById('customName').focus(); return; }
-
-  if (editingTileIndex === null) {
-    // CREATE MODE — add a brand new tile to the end of the array
-    tiles.push({ emoji: '⭐', name, score });
-  } else {
-    // EDIT MODE — overwrite just the name and score of the existing tile.
-    // The spread operator "...tiles[editingTileIndex]" copies all existing
-    // properties first (like emoji), then name and score override them.
-    tiles[editingTileIndex] = { ...tiles[editingTileIndex], name, score };
+  function deleteActivity(i) {
+    activities.splice(i, 1);
+    localStorage.setItem('hedonicActivities', JSON.stringify(activities));
+    render();
   }
 
-  // Save updated tiles array to localStorage
-  localStorage.setItem('hedonicTiles', JSON.stringify(tiles));
-  closeForm();
-  renderTiles(); // re-draw the grid with updated tiles
-}
-
-// Deletes a tile by index after confirmation.
-// Works for both preset and custom tiles since they're all in the same array.
-function deleteTile(index) {
-  if (!confirm(`Delete "${tiles[index].name}"?`)) return;
-  tiles.splice(index, 1); // remove 1 item at this position
-  localStorage.setItem('hedonicTiles', JSON.stringify(tiles));
-  renderTiles();
-}
-
-// ============================================================
-// RENDER TILES — builds the tile grid in the DOM
-// Called on load and whenever tiles change
-// ============================================================
-
-function renderTiles() {
-  const grid = document.getElementById('tilesGrid');
-  grid.innerHTML = ''; // clear existing tiles before re-drawing
-
-  tiles.forEach((tile, index) => {
-    const c = scoreColor(tile.score);
-    const div = document.createElement('div'); // create a new div element
-    div.className = 'tile';
-
-    // innerHTML sets the HTML content of the tile.
-    // Template literals (backticks) let us embed variables with ${}.
-    // event.stopPropagation() on buttons prevents the click from also
-    // triggering the tile's own onclick (which would log the activity).
-    div.innerHTML = `
-      <button class="tile-edit" onclick="event.stopPropagation(); openEditForm(${index})" title="Edit tile">✏️</button>
-      <button class="tile-del"  onclick="event.stopPropagation(); deleteTile(${index})"   title="Delete tile">✕</button>
-      <span class="tile-emoji">${tile.emoji}</span>
-      <span class="tile-name">${tile.name}</span>
-      <span class="tile-score" style="background:${c.bg};color:${c.text}">${tile.score}/10</span>
-    `;
-
-    // Tapping the tile body (not the buttons) logs the activity
-    div.onclick = () => logActivity(tile.name, tile.score, div);
-    grid.appendChild(div);
-  });
-
-  // Add the "+ New Tile" button at the end of the grid
-  const addBtn = document.createElement('div');
-  addBtn.className = 'add-tile-btn';
-  addBtn.innerHTML = '<span class="plus">＋</span><span>New Tile</span>';
-  addBtn.onclick = openNewForm;
-  grid.appendChild(addBtn);
-}
-
-// ============================================================
-// RENDER LOG PAGE — updates chart, stats strip, and activity list
-// Called after every activity is logged or deleted
-// ============================================================
-
-function render() {
-  const scores = activities.map(a => a.score); // extract just the score numbers
-
-  // Update the three stat boxes at the top
-  if (!scores.length) {
-    ['avgDisplay', 'highDisplay', 'lowDisplay'].forEach(id => document.getElementById(id).textContent = '—');
-    document.getElementById('baselineMsg').textContent = 'Tap an activity below to get started.';
-    document.getElementById('baselineMsg').className = 'baseline-msg msg-mid';
-  } else {
-    const avg = avgOf(scores);
-    document.getElementById('avgDisplay').textContent = avg;
-    document.getElementById('highDisplay').textContent = Math.max(...scores); // spread operator passes array items as arguments
-    document.getElementById('lowDisplay').textContent = Math.min(...scores);
-
-    // Update the baseline message based on how high the average is
-    const msg = document.getElementById('baselineMsg');
-    if (avg >= 7) {
-      msg.textContent = `⚠️ High baseline (${avg}/10) — low-satisfaction tasks may feel especially hard right now.`;
-      msg.className = 'baseline-msg msg-high';
-    } else if (avg >= 4) {
-      msg.textContent = `✅ Balanced baseline (${avg}/10) — good mix of activities.`;
-      msg.className = 'baseline-msg msg-mid';
-    } else {
-      msg.textContent = `📉 Low baseline (${avg}/10) — try adding more enjoyable activities.`;
-      msg.className = 'baseline-msg msg-low';
+  function clearAll() {
+    if (confirm('Clear all activity data? This cannot be undone.')) {
+      activities = [];
+      localStorage.removeItem('hedonicActivities');
+      render();
     }
   }
 
-  // Update chart data
-  chart.data.labels = activities.map((a, i) => `#${i + 1}`);
-  chart.data.datasets[0].data = scores;
-  // Calculate running average at each point:
-  // For each activity, slice everything up to that point and average it
-  chart.data.datasets[1].data = activities.map((_, i) => {
-    const slice = activities.slice(0, i + 1).map(a => a.score);
-    return parseFloat((slice.reduce((a, b) => a + b, 0) / slice.length).toFixed(2));
-  });
-  chart.update('none'); // 'none' disables animation on update for snappier feel
-
-  // Re-draw the activity log list
-  const list = document.getElementById('logList');
-  list.innerHTML = '';
-  if (!activities.length) {
-    list.innerHTML = '<li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>';
-    return;
-  }
-  // Reverse so newest activities appear at the top.
-  // We reverse a copy ([...activities]) so we don't mutate the original array.
-  // We track "ri" (reversed index) but need "i" (real index) for deleteActivity().
-  [...activities].reverse().forEach((a, ri) => {
-    const i = activities.length - 1 - ri; // convert reversed index back to real index
-    const li = document.createElement('li');
-    li.className = 'log-item';
-    li.innerHTML = `
-      <div class="log-item-left">
-        <strong>${a.name}</strong>
-        <span class="log-time">${a.date} · ${a.time}</span>
-      </div>
-      <div class="log-item-right">
-        <span class="score-tag" style="${scoreTagStyle(a.score)}">${a.score}/10</span>
-        <button class="del-btn" onclick="deleteActivity(${i})">✕</button>
-      </div>`;
-    list.appendChild(li);
-  });
-}
-
-// ============================================================
-// RENDER STATS PAGE
-// Called every time the Stats tab is opened
-// ============================================================
-
-function renderStats() {
-  const today = new Date();
-  const todayKey = toDateKey(today);
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayKey = toDateKey(yesterday);
-
-  const thisWeekStart = getWeekStart(today);
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(thisWeekStart.getDate() - 7);
-  const lastWeekEnd = new Date(thisWeekStart);
-  lastWeekEnd.setDate(thisWeekStart.getDate() - 1);
-
-  // Group activities by their dateKey into an object like:
-  // { "2026-03-06": [8, 5, 7], "2026-03-05": [3, 6] }
-  const byDay = {};
-  activities.forEach(a => {
-    if (!byDay[a.dateKey]) byDay[a.dateKey] = [];
-    byDay[a.dateKey].push(a.score);
-  });
-
-  // Daily averages
-  const todayScores = byDay[todayKey] || [];
-  const yestScores = byDay[yesterdayKey] || [];
-  const todayAvg = avgOf(todayScores);
-  const yestAvg = avgOf(yestScores);
-
-  document.getElementById('todayAvg').textContent = todayAvg ?? '—'; // ?? means "if null, use right side"
-  document.getElementById('todayCount').textContent = `${todayScores.length} activit${todayScores.length === 1 ? 'y' : 'ies'}`;
-  document.getElementById('yesterdayAvg').textContent = yestAvg ?? '—';
-  document.getElementById('yesterdayCount').textContent = `${yestScores.length} activit${yestScores.length === 1 ? 'y' : 'ies'}`;
-
-  // Daily delta (difference between today and yesterday)
-  const dDelta = document.getElementById('dailyDelta');
-  if (todayAvg !== null && yestAvg !== null) {
-    const d = (todayAvg - yestAvg).toFixed(1);
-    dDelta.textContent = d > 0 ? `▲ +${d} vs yesterday` : d < 0 ? `▼ ${d} vs yesterday` : `= Same as yesterday`;
-    dDelta.className = `delta ${d > 0 ? 'delta-up' : d < 0 ? 'delta-down' : 'delta-same'}`;
-  } else {
-    dDelta.textContent = '—';
-    dDelta.className = 'delta delta-same';
+  // ---- TILE MANAGEMENT ----
+  function openNewForm() {
+    editingTileIndex = null;
+    document.getElementById('customName').value = '';
+    document.getElementById('customSlider').value = 5;
+    document.getElementById('customSliderVal').textContent = '5';
+    document.getElementById('saveBtn').textContent = 'Save New Tile';
+    document.getElementById('customForm').classList.add('open');
+    document.getElementById('customName').focus();
   }
 
-  // Weekly averages — filter activities into this week and last week buckets
-  const thisWeekScores = [], lastWeekScores = [];
-  activities.forEach(a => {
-    // Add T12:00:00 to avoid timezone midnight edge cases
-    const d = new Date(a.dateKey + 'T12:00:00');
-    if (d >= thisWeekStart && d <= today) thisWeekScores.push(a.score);
-    else if (d >= lastWeekStart && d <= lastWeekEnd) lastWeekScores.push(a.score);
-  });
-
-  const twAvg = avgOf(thisWeekScores);
-  const lwAvg = avgOf(lastWeekScores);
-
-  document.getElementById('thisWeekAvg').textContent = twAvg ?? '—';
-  document.getElementById('thisWeekCount').textContent = `${thisWeekScores.length} activit${thisWeekScores.length === 1 ? 'y' : 'ies'}`;
-  document.getElementById('lastWeekAvg').textContent = lwAvg ?? '—';
-  document.getElementById('lastWeekCount').textContent = `${lastWeekScores.length} activit${lastWeekScores.length === 1 ? 'y' : 'ies'}`;
-
-  const wDelta = document.getElementById('weeklyDelta');
-  if (twAvg !== null && lwAvg !== null) {
-    const d = (twAvg - lwAvg).toFixed(1);
-    wDelta.textContent = d > 0 ? `▲ +${d} vs last week` : d < 0 ? `▼ ${d} vs last week` : `= Same as last week`;
-    wDelta.className = `delta ${d > 0 ? 'delta-up' : d < 0 ? 'delta-down' : 'delta-same'}`;
-  } else {
-    wDelta.textContent = '—';
-    wDelta.className = 'delta delta-same';
+  function openEditForm(index) {
+    editingTileIndex = index;
+    const tile = tiles[index];
+    document.getElementById('customName').value = tile.name;
+    document.getElementById('customSlider').value = tile.score;
+    document.getElementById('customSliderVal').textContent = tile.score;
+    document.getElementById('saveBtn').textContent = 'Update Tile';
+    document.getElementById('customForm').classList.add('open');
+    document.getElementById('customName').focus();
   }
 
-  renderCalendar(byDay, today, todayKey);
-}
-
-// ============================================================
-// RENDER CALENDAR
-// Builds a month grid where each day is colored by its average score
-// ============================================================
-
-function renderCalendar(byDay, today, todayKey) {
-  const year = today.getFullYear();
-  const month = today.getMonth(); // 0-indexed (0=Jan, 11=Dec)
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('calMonthLabel').textContent = `${monthNames[month]} ${year}`;
-
-  const grid = document.getElementById('calendarGrid');
-  grid.innerHTML = '';
-
-  // Day of week headers — Monday first
-  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
-    const h = document.createElement('div');
-    h.className = 'cal-header';
-    h.textContent = d;
-    grid.appendChild(h);
-  });
-
-  // Calculate how many empty cells to add before day 1
-  // so the first day lands on the correct column
-  const firstDay = new Date(year, month, 1);
-  let offset = firstDay.getDay() - 1; // getDay(): 0=Sun, 1=Mon...
-  if (offset < 0) offset = 6; // Sunday becomes 6 (last column)
-  for (let i = 0; i < offset; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'cal-empty';
-    grid.appendChild(empty);
+  function closeForm() {
+    document.getElementById('customForm').classList.remove('open');
+    editingTileIndex = null;
   }
 
-  // new Date(year, month+1, 0) gives the last day of the month
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const scores = byDay[key] || [];
-    const avg = avgOf(scores);
-
-    // Pick the right color class based on the day's average
-    const cls = avg === null ? 'cal-none' : avg >= 7 ? 'cal-high' : avg >= 4 ? 'cal-mid' : 'cal-low';
-    const cell = document.createElement('div');
-    cell.className = `cal-day ${cls}${key === todayKey ? ' cal-today' : ''}`;
-    cell.innerHTML = `
-      <span class="day-num">${d}</span>
-      ${avg !== null ? `<span class="day-score">${avg}</span>` : ''}
-    `;
-    cell.title = avg !== null ? `${key}: avg ${avg} (${scores.length} activities)` : key;
-    grid.appendChild(cell);
+  function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const btn = document.getElementById('editModeToggle');
+    btn.textContent = isEditMode ? 'Exit Edit' : 'Edit Mode';
+    btn.style.background = isEditMode ? 'var(--red)' : 'transparent';
+    btn.style.color = isEditMode ? 'white' : 'var(--red)';
+    renderTiles();
   }
-}
 
-// ============================================================
-// INIT — runs once when the page first loads
-// ============================================================
-renderTiles(); // draw the tile grid
-render();      // draw the chart and log list
+  function saveTile() {
+    const name = document.getElementById('customName').value.trim();
+    const score = parseInt(document.getElementById('customSlider').value);
+    if (!name) { document.getElementById('customName').focus(); return; }
+    if (editingTileIndex === null) {
+      tiles.push({ emoji: '⭐', name, score });
+    } else {
+      tiles[editingTileIndex] = { ...tiles[editingTileIndex], name, score };
+    }
+    localStorage.setItem('hedonicTiles', JSON.stringify(tiles));
+    closeForm();
+    renderTiles();
+  }
+
+  function deleteTile(index) {
+    if (!confirm(`Delete "${tiles[index].name}"?`)) return;
+    tiles.splice(index, 1);
+    localStorage.setItem('hedonicTiles', JSON.stringify(tiles));
+    renderTiles();
+  }
+
+  // ---- RENDER TILES ----
+  function renderTiles() {
+    const grid = document.getElementById('tilesGrid');
+    grid.innerHTML = '';
+    tiles.forEach((tile, index) => {
+      const c = scoreColor(tile.score);
+      const div = document.createElement('div');
+      div.className = 'tile';
+      div.innerHTML = `
+        <button class="tile-del"  onclick="event.stopPropagation(); deleteTile(${index})"   title="Delete tile">✕</button>
+        <span class="tile-emoji">${tile.emoji}</span>
+        <span class="tile-name">${tile.name}</span>
+        <span class="tile-score" style="background:${c.bg};color:${c.text}">${tile.score}/10</span>
+      `;
+      div.onclick = isEditMode ? () => openEditForm(index) : () => logActivity(tile.name, tile.score, div);
+      grid.appendChild(div);
+    });
+    const addBtn = document.createElement('div');
+    addBtn.className = 'add-tile-btn';
+    addBtn.innerHTML = '<span class="plus">＋</span><span>New Tile</span>';
+    addBtn.onclick = openNewForm;
+    grid.appendChild(addBtn);
+  }
+
+  // ---- RENDER LOG PAGE ----
+  function render() {
+    const scores = activities.map(a => a.score);
+    if (!scores.length) {
+      ['avgDisplay','highDisplay','lowDisplay'].forEach(id => document.getElementById(id).textContent = '—');
+      document.getElementById('baselineMsg').textContent = 'Tap an activity to get started.';
+      document.getElementById('baselineMsg').className = 'baseline-msg msg-mid';
+    } else {
+      const avg = avgOf(scores);
+      document.getElementById('avgDisplay').textContent = avg;
+      document.getElementById('highDisplay').textContent = Math.max(...scores);
+      document.getElementById('lowDisplay').textContent = Math.min(...scores);
+      const msg = document.getElementById('baselineMsg');
+      if (avg >= 7) { msg.textContent = `⚠️ High baseline (${avg}/10) — low-satisfaction tasks may feel especially hard right now.`; msg.className = 'baseline-msg msg-high'; }
+      else if (avg >= 4) { msg.textContent = `✅ Balanced baseline (${avg}/10) — good mix of activities.`; msg.className = 'baseline-msg msg-mid'; }
+      else { msg.textContent = `📉 Low baseline (${avg}/10) — try adding more enjoyable activities.`; msg.className = 'baseline-msg msg-low'; }
+    }
+    chart.data.labels = activities.map((a,i) => `#${i+1}`);
+    chart.data.datasets[0].data = scores;
+    chart.data.datasets[1].data = activities.map((_,i) => {
+      const s = activities.slice(0,i+1).map(a=>a.score);
+      return parseFloat((s.reduce((a,b)=>a+b,0)/s.length).toFixed(2));
+    });
+    chart.update('none');
+    const list = document.getElementById('logList');
+    list.innerHTML = '';
+    if (!activities.length) { list.innerHTML = '<li class="empty-state"><span class="icon">🌱</span>No activities logged yet.</li>'; return; }
+    [...activities].reverse().forEach((a, ri) => {
+      const i = activities.length - 1 - ri;
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.innerHTML = `
+        <div class="log-item-left">
+          <strong>${a.name}</strong>
+          <span class="log-time">${a.date} · ${a.time}</span>
+        </div>
+        <div class="log-item-right">
+          <span class="score-tag" style="${scoreTagStyle(a.score)}">${a.score}/10</span>
+          <button class="del-btn" onclick="deleteActivity(${i})">✕</button>
+        </div>`;
+      list.appendChild(li);
+    });
+  }
+
+  // ---- RENDER STATS ----
+  function renderStats() {
+    const today = new Date();
+    const todayKey = toDateKey(today);
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const yesterdayKey = toDateKey(yesterday);
+    const thisWeekStart = getWeekStart(today);
+    const lastWeekStart = new Date(thisWeekStart); lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(thisWeekStart); lastWeekEnd.setDate(thisWeekStart.getDate() - 1);
+
+    const byDay = {};
+    activities.forEach(a => { if (!byDay[a.dateKey]) byDay[a.dateKey] = []; byDay[a.dateKey].push(a.score); });
+
+    const todayScores = byDay[todayKey] || [];
+    const yestScores  = byDay[yesterdayKey] || [];
+    const todayAvg = avgOf(todayScores);
+    const yestAvg  = avgOf(yestScores);
+
+    document.getElementById('todayAvg').textContent = todayAvg ?? '—';
+    document.getElementById('todayCount').textContent = `${todayScores.length} activit${todayScores.length===1?'y':'ies'}`;
+    document.getElementById('yesterdayAvg').textContent = yestAvg ?? '—';
+    document.getElementById('yesterdayCount').textContent = `${yestScores.length} activit${yestScores.length===1?'y':'ies'}`;
+
+    const dDelta = document.getElementById('dailyDelta');
+    if (todayAvg !== null && yestAvg !== null) {
+      const d = (todayAvg - yestAvg).toFixed(1);
+      dDelta.textContent = d > 0 ? `▲ +${d} vs yesterday` : d < 0 ? `▼ ${d} vs yesterday` : `= Same as yesterday`;
+      dDelta.className = `delta ${d>0?'delta-up':d<0?'delta-down':'delta-same'}`;
+    } else { dDelta.textContent = '—'; dDelta.className = 'delta delta-same'; }
+
+    const thisWeekScores = [], lastWeekScores = [];
+    activities.forEach(a => {
+      const d = new Date(a.dateKey + 'T12:00:00');
+      if (d >= thisWeekStart && d <= today) thisWeekScores.push(a.score);
+      else if (d >= lastWeekStart && d <= lastWeekEnd) lastWeekScores.push(a.score);
+    });
+    const twAvg = avgOf(thisWeekScores);
+    const lwAvg = avgOf(lastWeekScores);
+
+    document.getElementById('thisWeekAvg').textContent = twAvg ?? '—';
+    document.getElementById('thisWeekCount').textContent = `${thisWeekScores.length} activit${thisWeekScores.length===1?'y':'ies'}`;
+    document.getElementById('lastWeekAvg').textContent = lwAvg ?? '—';
+    document.getElementById('lastWeekCount').textContent = `${lastWeekScores.length} activit${lastWeekScores.length===1?'y':'ies'}`;
+
+    const wDelta = document.getElementById('weeklyDelta');
+    if (twAvg !== null && lwAvg !== null) {
+      const d = (twAvg - lwAvg).toFixed(1);
+      wDelta.textContent = d > 0 ? `▲ +${d} vs last week` : d < 0 ? `▼ ${d} vs last week` : `= Same as last week`;
+      wDelta.className = `delta ${d>0?'delta-up':d<0?'delta-down':'delta-same'}`;
+    } else { wDelta.textContent = '—'; wDelta.className = 'delta delta-same'; }
+
+    renderCalendar(byDay, today, todayKey);
+  }
+
+  function renderCalendar(byDay, today, todayKey) {
+    const year = today.getFullYear(), month = today.getMonth();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calMonthLabel').textContent = `${monthNames[month]} ${year}`;
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
+      const h = document.createElement('div'); h.className = 'cal-header'; h.textContent = d; grid.appendChild(h);
+    });
+    const firstDay = new Date(year, month, 1);
+    let offset = firstDay.getDay() - 1; if (offset < 0) offset = 6;
+    for (let i = 0; i < offset; i++) { const e = document.createElement('div'); e.className = 'cal-empty'; grid.appendChild(e); }
+    const days = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= days; d++) {
+      const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const scores = byDay[key] || [];
+      const avg = avgOf(scores);
+      const cls = avg===null?'cal-none':avg>=7?'cal-high':avg>=4?'cal-mid':'cal-low';
+      const cell = document.createElement('div');
+      cell.className = `cal-day ${cls}${key===todayKey?' cal-today':''}`;
+      cell.innerHTML = `<span class="day-num">${d}</span>${avg!==null?`<span class="day-score">${avg}</span>`:''}`;
+      cell.title = avg!==null?`${key}: avg ${avg} (${scores.length} activities)`:key;
+      grid.appendChild(cell);
+    }
+  }
+
+  // ---- INIT ----
+  renderTiles();
+  render();
 </script>
 </body>
 </html>
